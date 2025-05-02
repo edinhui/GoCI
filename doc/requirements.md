@@ -21,52 +21,66 @@
     info:
       title: Common Types Definition
       version: 1.0.0
+      description: 系统预定义的通用类型
     components:
       schemas:
         # 基础类型
         String:
           type: string
+          description: 字符串类型
         Integer:
           type: integer
+          description: 整数类型
         Float:
           type: number
+          description: 浮点数类型
         Boolean:
           type: boolean
+          description: 布尔类型
         DateTime:
           type: string
           format: date-time
+          description: 日期时间类型
         
         # 网络相关
         IPv4Address:
           type: string
           format: ipv4
+          description: IPv4地址
         IPv6Address:
           type: string
           format: ipv6
+          description: IPv6地址
         MACAddress:
           type: string
           pattern: "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+          description: MAC地址
         Port:
           type: integer
           minimum: 0
           maximum: 65535
+          description: 端口号
         
         # 文件系统
         FilePath:
           type: string
           pattern: "^[a-zA-Z0-9_./-]+$"
+          description: 文件路径
         DirectoryPath:
           type: string
           pattern: "^[a-zA-Z0-9_./-]+$"
+          description: 目录路径
         
         # 安全相关
         Password:
           type: string
           minLength: 8
           pattern: "^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
+          description: 密码（至少8位，包含字母和数字）
         Email:
           type: string
           format: email
+          description: 电子邮件地址
     ```
 
   - 配置Schema组织方式
@@ -77,15 +91,24 @@
       info:
         title: Application Configuration
         version: 1.0.0
+        description: 应用程序配置定义
+      tags:
+        - name: system
+          description: 系统配置
+        - name: network
+          description: 网络配置
       components:
         schemas:
           AppConfig:
             type: object
+            description: 应用程序配置
             properties:
               server:
                 $ref: './common_types.yaml#/components/schemas/ServerConfig'
+                description: 服务器配置
               database:
                 $ref: './common_types.yaml#/components/schemas/DatabaseConfig'
+                description: 数据库配置
       ```
 
     - 多文件方式（推荐用于复杂配置）
@@ -95,17 +118,29 @@
       info:
         title: Application Configuration
         version: 1.0.0
+        description: 应用程序配置定义
+      tags:
+        - name: system
+          description: 系统配置
+        - name: network
+          description: 网络配置
+        - name: security
+          description: 安全配置
       components:
         schemas:
           AppConfig:
             type: object
+            description: 应用程序配置
             properties:
               server:
                 $ref: './schemas/server.yaml#/ServerConfig'
+                description: 服务器配置
               database:
                 $ref: './schemas/database.yaml#/DatabaseConfig'
+                description: 数据库配置
               logging:
                 $ref: './schemas/logging.yaml#/LoggingConfig'
+                description: 日志配置
       ```
 
   - 配置Schema编写建议
@@ -137,38 +172,7 @@
         └── security.yaml
     ```
 
-### 2.2 元数据约定
-- 基本信息（必填）
-  - 配置项标识（ID）：唯一标识符
-  - 配置项名称（Name）：显示名称
-  - 配置项描述（Description）：详细说明
-  - 配置项分组（Group）：所属分组
-
-- 配置属性（可选）
-  - 默认值（Default Value）
-  - 必填标记（Required）
-  - 只读标记（ReadOnly）
-  - 验证规则（Validation Rules）
-    - 最小值/最大值
-    - 正则表达式
-    - 枚举值列表
-
-### 2.3 分组约定
-- 分组命名约定
-  - 使用小写字母和下划线
-  - 反映功能模块
-  - 最多三级分组
-  - 示例：
-    - `system`
-    - `network/interfaces`
-    - `security/firewall/rules`
-
-- 分组结构约定
-  - 支持多级分组（建议不超过3级）
-  - 分组名称和描述
-  - 分组图标（可选）
-
-### 2.4 前端展示约定
+### 2.2 前端展示约定
 - 配置项编辑器选择
   - 字符串：文本输入框
   - 数字：数字输入框
@@ -193,138 +197,13 @@
   - 桌面端：多列布局
   - 自适应间距
 
-### 2.5 权限约定
+### 2.3 权限约定
 - 基于分组的权限控制
 - 权限级别：
   - `read`: 只读
   - `write`: 可修改
   - `admin`: 完全控制
 - 权限继承规则
-
-### 2.7 配置Schema组织
-- 预定义通用类型
-  - 系统提供的通用类型定义
-    ```yaml
-    # common_types.yaml
-    openapi: 3.0.0
-    info:
-      title: Common Types Definition
-      version: 1.0.0
-    components:
-      schemas:
-        # 基础类型
-        String:
-          type: string
-        Integer:
-          type: integer
-        Float:
-          type: number
-        Boolean:
-          type: boolean
-        DateTime:
-          type: string
-          format: date-time
-        
-        # 网络相关
-        IPv4Address:
-          type: string
-          format: ipv4
-        IPv6Address:
-          type: string
-          format: ipv6
-        MACAddress:
-          type: string
-          pattern: "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
-        Port:
-          type: integer
-          minimum: 0
-          maximum: 65535
-        
-        # 文件系统
-        FilePath:
-          type: string
-          pattern: "^[a-zA-Z0-9_./-]+$"
-        DirectoryPath:
-          type: string
-          pattern: "^[a-zA-Z0-9_./-]+$"
-        
-        # 安全相关
-        Password:
-          type: string
-          minLength: 8
-          pattern: "^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
-        Email:
-          type: string
-          format: email
-    ```
-
-- 配置Schema组织方式
-  - 单一文件方式（推荐用于简单配置）
-    ```yaml
-    # app_config.yaml
-    openapi: 3.0.0
-    info:
-      title: Application Configuration
-      version: 1.0.0
-    components:
-      schemas:
-        AppConfig:
-          type: object
-          properties:
-            server:
-              $ref: './common_types.yaml#/components/schemas/ServerConfig'
-            database:
-              $ref: './common_types.yaml#/components/schemas/DatabaseConfig'
-    ```
-
-  - 多文件方式（推荐用于复杂配置）
-    ```yaml
-    # config.yaml
-    openapi: 3.0.0
-    info:
-      title: Application Configuration
-      version: 1.0.0
-    components:
-      schemas:
-        AppConfig:
-          type: object
-          properties:
-            server:
-              $ref: './schemas/server.yaml#/ServerConfig'
-            database:
-              $ref: './schemas/database.yaml#/DatabaseConfig'
-            logging:
-              $ref: './schemas/logging.yaml#/LoggingConfig'
-    ```
-
-- 配置Schema编写建议
-  - 简单配置（<10个配置项）
-    - 使用单一文件
-    - 直接引用通用类型
-    - 保持结构扁平
-
-  - 中等配置（10-50个配置项）
-    - 考虑按功能模块拆分
-    - 使用通用类型组合
-    - 保持合理的嵌套层级
-
-  - 复杂配置（>50个配置项）
-    - 必须按功能模块拆分
-    - 建立清晰的目录结构
-    - 使用多级引用
-    - 添加详细的注释说明
-
-- 目录结构建议
-  ```
-  config/
-  ├── common_types.yaml      # 系统预定义通用类型
-  ├── app_config.yaml        # 主配置文件（简单配置）
-  └── schemas/               # 复杂配置的Schema文件
-      ├── server.yaml
-      ├── database.yaml
-      ├── logging.yaml
-      └── security.yaml
-  ```
 
 ## 3. 功能需求
 
