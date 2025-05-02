@@ -13,41 +13,128 @@
   - 避免使用特殊字符
   - 示例：`network_interface`, `system_timezone`
 
-- 配置项类型约定
-  - 基础类型
-    - 字符串（String）
-    - 整数（Integer）
-    - 浮点数（Float）
-    - 布尔值（Boolean）
-    - 日期时间（DateTime）
-  - 复合类型
-    - 数组（使用 `_list` 后缀）
-    - 对象（使用 `_config` 后缀）
-  - 特殊类型
-    - 密码（Password）
-    - 文件路径（FilePath）
-    - IP地址（IPAddress）
-    - MAC地址（MACAddress）
-    - 端口号（Port）
-    - 枚举值（Enum）
-
-- 配置文件约定
-  - 使用YAML格式
-  - 文件名与分组名对应
-  - 配置文件结构反映分组结构
-  - 示例：
+- 配置Schema定义（基于OpenAPI 3.0规范）
+  - 预定义通用类型
     ```yaml
-    # system.yaml
-    system:
-      timezone: "UTC"
-      hostname: "router"
-    
-    # network/interfaces.yaml
-    network:
-      interfaces:
-        - name: "eth0"
-          type: "ethernet"
-          ip: "192.168.1.1"
+    # common_types.yaml
+    openapi: 3.0.0
+    info:
+      title: Common Types Definition
+      version: 1.0.0
+    components:
+      schemas:
+        # 基础类型
+        String:
+          type: string
+        Integer:
+          type: integer
+        Float:
+          type: number
+        Boolean:
+          type: boolean
+        DateTime:
+          type: string
+          format: date-time
+        
+        # 网络相关
+        IPv4Address:
+          type: string
+          format: ipv4
+        IPv6Address:
+          type: string
+          format: ipv6
+        MACAddress:
+          type: string
+          pattern: "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+        Port:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        
+        # 文件系统
+        FilePath:
+          type: string
+          pattern: "^[a-zA-Z0-9_./-]+$"
+        DirectoryPath:
+          type: string
+          pattern: "^[a-zA-Z0-9_./-]+$"
+        
+        # 安全相关
+        Password:
+          type: string
+          minLength: 8
+          pattern: "^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
+        Email:
+          type: string
+          format: email
+    ```
+
+  - 配置Schema组织方式
+    - 单一文件方式（推荐用于简单配置）
+      ```yaml
+      # app_config.yaml
+      openapi: 3.0.0
+      info:
+        title: Application Configuration
+        version: 1.0.0
+      components:
+        schemas:
+          AppConfig:
+            type: object
+            properties:
+              server:
+                $ref: './common_types.yaml#/components/schemas/ServerConfig'
+              database:
+                $ref: './common_types.yaml#/components/schemas/DatabaseConfig'
+      ```
+
+    - 多文件方式（推荐用于复杂配置）
+      ```yaml
+      # config.yaml
+      openapi: 3.0.0
+      info:
+        title: Application Configuration
+        version: 1.0.0
+      components:
+        schemas:
+          AppConfig:
+            type: object
+            properties:
+              server:
+                $ref: './schemas/server.yaml#/ServerConfig'
+              database:
+                $ref: './schemas/database.yaml#/DatabaseConfig'
+              logging:
+                $ref: './schemas/logging.yaml#/LoggingConfig'
+      ```
+
+  - 配置Schema编写建议
+    - 简单配置（<10个配置项）
+      - 使用单一文件
+      - 直接引用通用类型
+      - 保持结构扁平
+
+    - 中等配置（10-50个配置项）
+      - 考虑按功能模块拆分
+      - 使用通用类型组合
+      - 保持合理的嵌套层级
+
+    - 复杂配置（>50个配置项）
+      - 必须按功能模块拆分
+      - 建立清晰的目录结构
+      - 使用多级引用
+      - 添加详细的注释说明
+
+  - 目录结构建议
+    ```
+    config/
+    ├── common_types.yaml      # 系统预定义通用类型
+    ├── app_config.yaml        # 主配置文件（简单配置）
+    └── schemas/               # 复杂配置的Schema文件
+        ├── server.yaml
+        ├── database.yaml
+        ├── logging.yaml
+        └── security.yaml
     ```
 
 ### 2.2 元数据约定
@@ -113,6 +200,131 @@
   - `write`: 可修改
   - `admin`: 完全控制
 - 权限继承规则
+
+### 2.7 配置Schema组织
+- 预定义通用类型
+  - 系统提供的通用类型定义
+    ```yaml
+    # common_types.yaml
+    openapi: 3.0.0
+    info:
+      title: Common Types Definition
+      version: 1.0.0
+    components:
+      schemas:
+        # 基础类型
+        String:
+          type: string
+        Integer:
+          type: integer
+        Float:
+          type: number
+        Boolean:
+          type: boolean
+        DateTime:
+          type: string
+          format: date-time
+        
+        # 网络相关
+        IPv4Address:
+          type: string
+          format: ipv4
+        IPv6Address:
+          type: string
+          format: ipv6
+        MACAddress:
+          type: string
+          pattern: "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+        Port:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        
+        # 文件系统
+        FilePath:
+          type: string
+          pattern: "^[a-zA-Z0-9_./-]+$"
+        DirectoryPath:
+          type: string
+          pattern: "^[a-zA-Z0-9_./-]+$"
+        
+        # 安全相关
+        Password:
+          type: string
+          minLength: 8
+          pattern: "^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
+        Email:
+          type: string
+          format: email
+    ```
+
+- 配置Schema组织方式
+  - 单一文件方式（推荐用于简单配置）
+    ```yaml
+    # app_config.yaml
+    openapi: 3.0.0
+    info:
+      title: Application Configuration
+      version: 1.0.0
+    components:
+      schemas:
+        AppConfig:
+          type: object
+          properties:
+            server:
+              $ref: './common_types.yaml#/components/schemas/ServerConfig'
+            database:
+              $ref: './common_types.yaml#/components/schemas/DatabaseConfig'
+    ```
+
+  - 多文件方式（推荐用于复杂配置）
+    ```yaml
+    # config.yaml
+    openapi: 3.0.0
+    info:
+      title: Application Configuration
+      version: 1.0.0
+    components:
+      schemas:
+        AppConfig:
+          type: object
+          properties:
+            server:
+              $ref: './schemas/server.yaml#/ServerConfig'
+            database:
+              $ref: './schemas/database.yaml#/DatabaseConfig'
+            logging:
+              $ref: './schemas/logging.yaml#/LoggingConfig'
+    ```
+
+- 配置Schema编写建议
+  - 简单配置（<10个配置项）
+    - 使用单一文件
+    - 直接引用通用类型
+    - 保持结构扁平
+
+  - 中等配置（10-50个配置项）
+    - 考虑按功能模块拆分
+    - 使用通用类型组合
+    - 保持合理的嵌套层级
+
+  - 复杂配置（>50个配置项）
+    - 必须按功能模块拆分
+    - 建立清晰的目录结构
+    - 使用多级引用
+    - 添加详细的注释说明
+
+- 目录结构建议
+  ```
+  config/
+  ├── common_types.yaml      # 系统预定义通用类型
+  ├── app_config.yaml        # 主配置文件（简单配置）
+  └── schemas/               # 复杂配置的Schema文件
+      ├── server.yaml
+      ├── database.yaml
+      ├── logging.yaml
+      └── security.yaml
+  ```
 
 ## 3. 功能需求
 
