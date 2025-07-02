@@ -12,12 +12,15 @@ The configuration management component aims to simplify the process of creating,
 
 - **Backend**: Golang
 - **Frontend**: Vue 3
+- **Data Storage**: JSON files
 - **Configuration Format**: JSON
 - **Schema Definition**: JSON Schema
+- **API Design**: RESTful
 
 ## Functional Requirements
 
 ### 1. JSON Schema Creation Interface
+The JSON Schema creation interface allows users to define the structure and validation rules for their configuration files. It provides a visual editor that enables users to create and edit JSON Schema definitions. The interface supports defining up to 3 levels of configuration hierarchy, including navigation, sidebar, and page levels. Users can specify data types, default values, and validation constraints for each configuration item. The interface also includes a preview functionality to visualize the generated schema.
 
 #### 1.1 Features
 
@@ -26,7 +29,7 @@ The configuration management component aims to simplify the process of creating,
 - Support for defining up to 3 levels of configuration hierarchy
 - Ability to specify data types, default values, and validation constraints
 - Preview functionality for the generated schema
-
+- Integration with JSON Schema validation libraries for schema validation
 #### 1.2 Outputs
 
 - JSON Schema file that defines the structure and validation rules for configuration files
@@ -34,7 +37,7 @@ The configuration management component aims to simplify the process of creating,
 - Generated code snippets for accessing configuration values in Golang applications
 
 ### 2. Configuration Viewing and Editing Interface
-
+The configuration viewing and editing interface provides users with a user-friendly interface to view and modify configuration files. It supports multi-level configuration navigation, allowing users to access and modify configuration items at different levels. The interface dynamically generates forms based on the JSON Schema definition, providing real-time validation and error handling. Users can modify configuration values, save changes, and track version history.
 #### 2.1 Features
 
 - Dynamic form generation based on the JSON Schema definition
