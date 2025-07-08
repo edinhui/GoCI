@@ -38,23 +38,29 @@ The JSON Schema creation interface allows users to define the structure and vali
 - Generated code snippets for accessing configuration values in Golang applications
 
 ### 2. Configuration Viewing and Editing Interface
-The configuration viewing and editing interface provides users with a user-friendly interface to view and modify configuration files. It supports multi-level configuration navigation, allowing users to access and modify configuration items at different levels. The interface dynamically generates forms based on the JSON Schema definition, providing real-time validation and error handling. Users can modify configuration values, save changes, and track version history.
-#### 2.1 Features
+The configuration viewing and editing interface provides a completely form-based user experience for working with configuration files. The interface:
 
-- Dynamic form generation based on the JSON Schema definition
-- Automatic rendering of configuration fields with appropriate input controls
-- Hierarchical navigation for multi-level configurations
-- Real-time validation against the JSON Schema
-- Ability to modify configuration values and save changes
-- Version history and comparison tools
+- Dynamically generates forms based on JSON Schema definitions
+- Provides appropriate input controls for each configuration field type
+- Supports hierarchical navigation through configuration levels
+- Offers real-time validation and error highlighting
+- Maintains version history of all changes
+
+#### 2.1 Features
+- Schema-driven form generation (no raw JSON editing)
+- Field-specific input controls (dropdowns, checkboxes, etc.)
+- Grouping and categorization of related settings
+- Real-time validation feedback
+- Change tracking and version comparison
+- Bulk editing for array-type configurations
 
 #### 2.2 User Experience
-
-- Intuitive navigation between configuration sections
-- Clear visual indicators for validation errors
-- Responsive design for various screen sizes
-- Search functionality for finding specific configuration items
-- Help text and tooltips for configuration options
+- Intuitive form-based workflow
+- Visual grouping of related settings
+- Inline help and documentation
+- Responsive layout for all devices
+- Save/Reset/Cancel controls
+- Audit trail of changes
 
 ### 3. Backend API for Configuration Access
 
@@ -76,14 +82,18 @@ The configuration viewing and editing interface provides users with a user-frien
 
 #### 4.1 Hierarchy Levels
 
-- **Level 1 (Navigation Bar)**: Separate JSON files for each top-level section
-- **Level 2 (Sidebar)**: Sections within a single JSON file corresponding to a Level 1 item
-- **Level 3 (Page)**: Detailed configuration items within a Level 2 section
+- Each JSON configuration file provides a major category of configuration, containing up to 3 levels:
+  - **Level 1 (Navigation Bar Level)**: Configuration items displayed in the top navigation bar
+  - **Level 2 (Sidebar Level)**: Configuration categories displayed in the sidebar
+  - **Level 3 (Page Level)**: Detailed configuration items displayed in the configuration page
 
 #### 4.2 File Organization
 
-- Clear naming conventions for configuration files
-- Directory structure that reflects the configuration hierarchy
+- JSON Schema files are stored in a dedicated directory
+- JSON configuration files are stored in another dedicated directory
+- Each JSON Schema and its corresponding JSON configuration has its own separate directory
+- Directory names match the JSON Schema names
+- Clear file naming conventions
 - Metadata for tracking configuration versions and modification timestamps
 
 ### 5. Integration with Golang Applications
