@@ -30,6 +30,7 @@ The JSON Schema creation interface allows users to define the structure and vali
 - Ability to specify data types, default values, and validation constraints
 - Preview functionality for the generated schema
 - Integration with JSON Schema validation libraries for schema validation
+- provide **[vue-json-schema-editor-visual](https://github.com/zyqwst/json-schema-editor-vue3)** like UI interface for creating JSON Schema definitions
 #### 1.2 Outputs
 
 - JSON Schema file that defines the structure and validation rules for configuration files

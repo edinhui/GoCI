@@ -3,15 +3,23 @@
 ## 1. 前端技术选型 (Vue 3)
 
 ### JSON Schema 创建页面相关框架
-- **框架推荐**：
-  - **JSON Schema Form**：推荐使用 `@formkit/vue` 或 `vue-json-schema-form`，它们都与 Vue 3 兼容，并提供了强大的表单生成和验证功能
+- **图形化编辑器**：
+  - 采用类似 **[vue-json-schema-editor-visual](https://github.com/zyqwst/json-schema-editor-vue3)** 的树状列表形式，提供图形化的编辑和生成界面
+  - 支持拖拽操作、节点添加/删除/编辑等功能
+  - 实时预览生成的 JSON Schema
+
+- **编辑器组件**：
   - **Monaco Editor**：用于高级 JSON 编辑，与 VS Code 使用相同的编辑器引擎，支持语法高亮和自动完成
+  - **JSON Editor**：功能强大的 JSON 编辑器，支持树视图、代码视图和表单视图
+  - **vue-json-editor**：轻量级 JSON 编辑器组件，支持基本的编辑功能
 
 ### CSS 风格
 - **UI 框架**：
   - **Element Plus**：专为 Vue 3 设计的组件库，提供完整的设计系统
-  - **Tailwind CSS**：实用优先的 CSS 框架，高度可定制，适合现代 UI 设计
-  - **Vuetify 3**：Material Design 风格的 Vue 3 组件库，提供丰富的预设组件
+    - 丰富的组件库，包括表单、表格、导航等
+    - 全面的主题定制能力
+    - 国际化支持
+    - 活跃的社区和完善的文档
 
 ## 2. JSON 文件浏览和修改框架
 
