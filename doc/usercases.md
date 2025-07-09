@@ -163,20 +163,7 @@
 
 ## 4. System Administration
 
-### Use Case 4.1: Manage User Access
-**Actor**: System Administrator
-**Description**: Control who can view and edit configurations.
-
-**Steps**:
-1. Administrator navigates to the Access Control page
-2. Administrator assigns permissions to users or groups
-3. Administrator saves the permission settings
-
-**Post-conditions**:
-- User permissions are updated
-- Changes take effect immediately
-
-### Use Case 4.2: Configure System Settings
+### Use Case 4.1: Configure System Settings
 **Actor**: System Administrator
 **Description**: Modify system-wide settings for the configuration management component.
 
@@ -192,7 +179,7 @@
 - System settings are updated
 - Changes take effect immediately or after restart, depending on the setting
 
-### Use Case 4.3: Export/Import Schemas and Configurations
+### Use Case 4.2: Export/Import Schemas and Configurations
 **Actor**: System Administrator
 **Description**: Transfer schemas and configurations between environments.
 
