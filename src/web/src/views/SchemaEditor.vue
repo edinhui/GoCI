@@ -251,34 +251,43 @@ const openAddChildPropertyDialog = (parent) => {
   propertyDialogVisible.value = true
 }
 
+// Helper function to ensure a property has all the necessary validation fields
+const ensureValidationFields = (property) => {
+  const result = { ...property }
+  
+  // Common fields
+  if (!('description' in result)) result.description = ''
+  if (!('enum' in result)) result.enum = []
+  if (!('children' in result)) result.children = []
+  
+  // Type-specific validation fields
+  if (property.type === 'string') {
+    if (!('minLength' in result)) result.minLength = null
+    if (!('maxLength' in result)) result.maxLength = null
+    if (!('pattern' in result)) result.pattern = ''
+    if (!('format' in result)) result.format = ''
+  } else if (property.type === 'number') {
+    if (!('minimum' in result)) result.minimum = null
+    if (!('maximum' in result)) result.maximum = null
+    if (!('multipleOf' in result)) result.multipleOf = null
+    if (!('exclusiveMinimum' in result)) result.exclusiveMinimum = false
+    if (!('exclusiveMaximum' in result)) result.exclusiveMaximum = false
+  } else if (property.type === 'array') {
+    if (!('minItems' in result)) result.minItems = null
+    if (!('maxItems' in result)) result.maxItems = null
+    if (!('uniqueItems' in result)) result.uniqueItems = false
+  }
+  
+  return result
+}
+
 // Open dialog to edit a property
 const openEditPropertyDialog = (property) => {
   dialogMode.value = 'edit'
   parentProperty.value = null
   
-  // Create a deep copy of the property to avoid direct mutation
-  currentProperty.value = JSON.parse(JSON.stringify(property))
-  
-  // Ensure all validation fields are initialized
-  if (property.type === 'string') {
-    if (!('minLength' in currentProperty.value)) currentProperty.value.minLength = null
-    if (!('maxLength' in currentProperty.value)) currentProperty.value.maxLength = null
-    if (!('pattern' in currentProperty.value)) currentProperty.value.pattern = ''
-    if (!('format' in currentProperty.value)) currentProperty.value.format = ''
-  } else if (property.type === 'number') {
-    if (!('minimum' in currentProperty.value)) currentProperty.value.minimum = null
-    if (!('maximum' in currentProperty.value)) currentProperty.value.maximum = null
-    if (!('multipleOf' in currentProperty.value)) currentProperty.value.multipleOf = null
-    if (!('exclusiveMinimum' in currentProperty.value)) currentProperty.value.exclusiveMinimum = false
-    if (!('exclusiveMaximum' in currentProperty.value)) currentProperty.value.exclusiveMaximum = false
-  } else if (property.type === 'array') {
-    if (!('minItems' in currentProperty.value)) currentProperty.value.minItems = null
-    if (!('maxItems' in currentProperty.value)) currentProperty.value.maxItems = null
-    if (!('uniqueItems' in currentProperty.value)) currentProperty.value.uniqueItems = false
-  }
-  
-  if (!('description' in currentProperty.value)) currentProperty.value.description = ''
-  if (!('enum' in currentProperty.value)) currentProperty.value.enum = []
+  // Create a deep copy of the property and ensure all validation fields are initialized
+  currentProperty.value = ensureValidationFields(JSON.parse(JSON.stringify(property)))
   
   propertyDialogVisible.value = true
 }
@@ -309,6 +318,49 @@ const removeEnum = (index) => {
   currentProperty.value.enum.splice(index, 1)
 }
 
+// Helper function to extract validation fields from a property based on its type
+const extractValidationFields = (property) => {
+  const result = {
+    id: property.id || generateId(),
+    name: property.name,
+    type: property.type,
+    required: property.required,
+    children: property.children || []
+  }
+  
+  // Add description if available
+  if (property.description) result.description = property.description
+  
+  // Add validation rules based on type
+  if (property.type === 'string') {
+    if (property.minLength !== null && property.minLength !== undefined) result.minLength = property.minLength
+    if (property.maxLength !== null && property.maxLength !== undefined) result.maxLength = property.maxLength
+    if (property.pattern) result.pattern = property.pattern
+    if (property.format) result.format = property.format
+  }
+  
+  if (property.type === 'number') {
+    if (property.minimum !== null && property.minimum !== undefined) result.minimum = property.minimum
+    if (property.maximum !== null && property.maximum !== undefined) result.maximum = property.maximum
+    if (property.multipleOf !== null && property.multipleOf !== undefined) result.multipleOf = property.multipleOf
+    if (property.exclusiveMinimum) result.exclusiveMinimum = true
+    if (property.exclusiveMaximum) result.exclusiveMaximum = true
+  }
+  
+  if (property.type === 'array') {
+    if (property.minItems !== null && property.minItems !== undefined) result.minItems = property.minItems
+    if (property.maxItems !== null && property.maxItems !== undefined) result.maxItems = property.maxItems
+    if (property.uniqueItems) result.uniqueItems = true
+  }
+  
+  // Add enum values if present
+  if (property.enum && property.enum.length > 0) {
+    result.enum = [...property.enum]
+  }
+  
+  return result
+}
+
 // Save property from dialog
 const saveProperty = () => {
   if (!currentProperty.value.name.trim()) {
@@ -316,42 +368,8 @@ const saveProperty = () => {
     return
   }
   
-  // Create property object with common fields
-  const propertyData = {
-    id: currentProperty.value.id || generateId(),
-    name: currentProperty.value.name,
-    type: currentProperty.value.type,
-    required: currentProperty.value.required,
-    description: currentProperty.value.description || undefined,
-    children: currentProperty.value.children || []
-  }
-  
-  // Add validation rules based on type
-  if (currentProperty.value.type === 'string') {
-    if (currentProperty.value.minLength !== null) propertyData.minLength = currentProperty.value.minLength
-    if (currentProperty.value.maxLength !== null) propertyData.maxLength = currentProperty.value.maxLength
-    if (currentProperty.value.pattern) propertyData.pattern = currentProperty.value.pattern
-    if (currentProperty.value.format) propertyData.format = currentProperty.value.format
-  }
-  
-  if (currentProperty.value.type === 'number') {
-    if (currentProperty.value.minimum !== null) propertyData.minimum = currentProperty.value.minimum
-    if (currentProperty.value.maximum !== null) propertyData.maximum = currentProperty.value.maximum
-    if (currentProperty.value.multipleOf !== null) propertyData.multipleOf = currentProperty.value.multipleOf
-    if (currentProperty.value.exclusiveMinimum) propertyData.exclusiveMinimum = true
-    if (currentProperty.value.exclusiveMaximum) propertyData.exclusiveMaximum = true
-  }
-  
-  if (currentProperty.value.type === 'array') {
-    if (currentProperty.value.minItems !== null) propertyData.minItems = currentProperty.value.minItems
-    if (currentProperty.value.maxItems !== null) propertyData.maxItems = currentProperty.value.maxItems
-    if (currentProperty.value.uniqueItems) propertyData.uniqueItems = true
-  }
-  
-  // Add enum values if present
-  if (currentProperty.value.enum && currentProperty.value.enum.length > 0) {
-    propertyData.enum = [...currentProperty.value.enum]
-  }
+  // Create property object with validation fields
+  const propertyData = extractValidationFields(currentProperty.value)
   
   if (dialogMode.value === 'add') {
     if (parentProperty.value) {
@@ -429,40 +447,19 @@ const schemaPreview = computed(() => {
 
     const processProperties = (properties, schemaObj) => {
       for (const prop of properties) {
-        // Create property schema with type
+        // Create property schema with type and validation rules
         const propSchema = { type: prop.type }
         
-        // Add description if available
-        if (prop.description) {
-          propSchema.description = prop.description
-        }
+        // Apply validation rules using the same helper function
+        const validationFields = extractValidationFields(prop)
         
-        // Add validation rules based on type
-        if (prop.type === 'string') {
-          if (prop.minLength !== undefined && prop.minLength !== null) propSchema.minLength = prop.minLength
-          if (prop.maxLength !== undefined && prop.maxLength !== null) propSchema.maxLength = prop.maxLength
-          if (prop.pattern) propSchema.pattern = prop.pattern
-          if (prop.format) propSchema.format = prop.format
-        }
-        
-        if (prop.type === 'number') {
-          if (prop.minimum !== undefined && prop.minimum !== null) propSchema.minimum = prop.minimum
-          if (prop.maximum !== undefined && prop.maximum !== null) propSchema.maximum = prop.maximum
-          if (prop.multipleOf !== undefined && prop.multipleOf !== null) propSchema.multipleOf = prop.multipleOf
-          if (prop.exclusiveMinimum) propSchema.exclusiveMinimum = true
-          if (prop.exclusiveMaximum) propSchema.exclusiveMaximum = true
-        }
-        
-        if (prop.type === 'array') {
-          if (prop.minItems !== undefined && prop.minItems !== null) propSchema.minItems = prop.minItems
-          if (prop.maxItems !== undefined && prop.maxItems !== null) propSchema.maxItems = prop.maxItems
-          if (prop.uniqueItems) propSchema.uniqueItems = true
-        }
-        
-        // Add enum if available
-        if (prop.enum && prop.enum.length > 0) {
-          propSchema.enum = [...prop.enum]
-        }
+        // Copy all validation fields except id, name, type, required, and children
+        // which are handled separately in the schema generation
+        Object.keys(validationFields).forEach(key => {
+          if (!['id', 'name', 'type', 'required', 'children'].includes(key)) {
+            propSchema[key] = validationFields[key]
+          }
+        })
         
         // Handle object type with children
         if (prop.type === 'object' && prop.children && prop.children.length > 0) {
