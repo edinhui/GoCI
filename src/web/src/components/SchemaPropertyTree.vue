@@ -22,7 +22,7 @@
               <el-button 
                 size="small" 
                 v-if="data.type === 'object'" 
-                @click.stop="addChildProperty(data)"
+                @click.stop="emitAddChild(data)"
               >
                 <el-icon><Plus /></el-icon>
               </el-button>
@@ -79,7 +79,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:property', 'delete:property'])
+const emit = defineEmits(['update:property', 'delete:property', 'add:child'])
 
 // Format properties for the tree component
 const formattedProperties = computed(() => {
@@ -127,22 +127,9 @@ const saveProperty = () => {
   editDialogVisible.value = false
 }
 
-// Add a child property to an object property
-const addChildProperty = (parent) => {
-  const newProperty = {
-    id: generateId(),
-    name: 'newProperty',
-    type: 'string',
-    required: false,
-    children: []
-  }
-  
-  if (!parent.children) {
-    parent.children = []
-  }
-  
-  parent.children.push(newProperty)
-  emit('update:property', parent)
+// Emit event to add a child property
+const emitAddChild = (parent) => {
+  emit('add:child', parent)
 }
 
 // Delete a property

@@ -5,7 +5,7 @@
       <template #header>
         <div class="card-header">
           <h3>Schema Properties</h3>
-          <el-button type="primary" @click="addRootProperty">
+          <el-button type="primary" @click="openAddPropertyDialog">
             Add Property
           </el-button>
         </div>
@@ -15,6 +15,7 @@
           :properties="schemaProperties" 
           @update:property="updateProperty"
           @delete:property="deleteProperty"
+          @add:child="openAddChildPropertyDialog"
         />
       </div>
     </el-card>
@@ -32,6 +33,37 @@
         <pre>{{ schemaPreview }}</pre>
       </div>
     </el-card>
+    
+    <!-- Property Add/Edit Dialog -->
+    <el-dialog
+      v-model="propertyDialogVisible"
+      :title="dialogMode === 'add' ? 'Add Property' : 'Edit Property'"
+      width="500px"
+    >
+      <el-form :model="currentProperty" label-width="120px">
+        <el-form-item label="Name" required>
+          <el-input v-model="currentProperty.name" placeholder="Enter property name" />
+        </el-form-item>
+        <el-form-item label="Type" required>
+          <el-select v-model="currentProperty.type" placeholder="Select Type">
+            <el-option label="String" value="string" />
+            <el-option label="Number" value="number" />
+            <el-option label="Boolean" value="boolean" />
+            <el-option label="Object" value="object" />
+            <el-option label="Array" value="array" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Required">
+          <el-switch v-model="currentProperty.required" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="propertyDialogVisible = false">Cancel</el-button>
+          <el-button type="primary" @click="saveProperty">Save</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -43,20 +75,90 @@ import SchemaPropertyTree from '../components/SchemaPropertyTree.vue'
 // Schema properties data structure
 const schemaProperties = ref([])
 
+// Property dialog state
+const propertyDialogVisible = ref(false)
+const currentProperty = ref({
+  name: '',
+  type: 'string',
+  required: false,
+  children: []
+})
+const dialogMode = ref('add')
+const parentProperty = ref(null)
+
 // Generate a unique ID for new properties
 const generateId = () => {
   return 'prop_' + Date.now() + '_' + Math.floor(Math.random() * 1000)
 }
 
-// Add a new root property
-const addRootProperty = () => {
-  schemaProperties.value.push({
-    id: generateId(),
-    name: 'newProperty',
+// Open dialog to add a root property
+const openAddPropertyDialog = () => {
+  dialogMode.value = 'add'
+  currentProperty.value = {
+    name: '',
     type: 'string',
     required: false,
     children: []
-  })
+  }
+  parentProperty.value = null
+  propertyDialogVisible.value = true
+}
+
+// Open dialog to add a child property
+const openAddChildPropertyDialog = (parent) => {
+  dialogMode.value = 'add'
+  currentProperty.value = {
+    name: '',
+    type: 'string',
+    required: false,
+    children: []
+  }
+  parentProperty.value = parent
+  propertyDialogVisible.value = true
+}
+
+// Save property from dialog
+const saveProperty = () => {
+  if (!currentProperty.value.name.trim()) {
+    ElMessage.error('Property name is required')
+    return
+  }
+  
+  if (dialogMode.value === 'add') {
+    const newProperty = {
+      id: generateId(),
+      name: currentProperty.value.name,
+      type: currentProperty.value.type,
+      required: currentProperty.value.required,
+      children: []
+    }
+    
+    if (parentProperty.value) {
+      // Add as child property
+      if (parentProperty.value.type !== 'object') {
+        parentProperty.value.type = 'object'
+      }
+      if (!parentProperty.value.children) {
+        parentProperty.value.children = []
+      }
+      parentProperty.value.children.push(newProperty)
+      updateProperty(parentProperty.value)
+    } else {
+      // Add as root property
+      schemaProperties.value.push(newProperty)
+    }
+  } else {
+    // Edit existing property
+    updateProperty({
+      id: currentProperty.value.id,
+      name: currentProperty.value.name,
+      type: currentProperty.value.type,
+      required: currentProperty.value.required
+    })
+  }
+  
+  propertyDialogVisible.value = false
+  ElMessage.success('Property saved successfully')
 }
 
 // Update a property in the schema
