@@ -34,37 +34,6 @@
         </div>
       </template>
     </el-tree>
-
-    <!-- Property Edit Dialog -->
-    <el-dialog
-      v-model="editDialogVisible"
-      title="Edit Property"
-      width="500px"
-    >
-      <el-form :model="currentProperty" label-width="120px">
-        <el-form-item label="Name">
-          <el-input v-model="currentProperty.name" />
-        </el-form-item>
-        <el-form-item label="Type">
-          <el-select v-model="currentProperty.type" placeholder="Select Type">
-            <el-option label="String" value="string" />
-            <el-option label="Number" value="number" />
-            <el-option label="Boolean" value="boolean" />
-            <el-option label="Object" value="object" />
-            <el-option label="Array" value="array" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="Required">
-          <el-switch v-model="currentProperty.required" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="editDialogVisible = false">Cancel</el-button>
-          <el-button type="primary" @click="saveProperty">Save</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -79,7 +48,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:property', 'delete:property', 'add:child'])
+const emit = defineEmits(['update:property', 'delete:property', 'add:child', 'edit:property'])
 
 // Format properties for the tree component
 const formattedProperties = computed(() => {
@@ -89,10 +58,7 @@ const formattedProperties = computed(() => {
   }))
 })
 
-// Property editing
-const editDialogVisible = ref(false)
-const currentProperty = ref({})
-const currentPropertyId = ref(null)
+// No local state needed for property editing
 
 // Generate a unique ID for new properties
 const generateId = () => {
@@ -111,20 +77,9 @@ const getTypeColor = (type) => {
   return typeColors[type] || ''
 }
 
-// Edit a property
+// Emit event to edit a property
 const editProperty = (property) => {
-  currentPropertyId.value = property.id
-  currentProperty.value = { ...property }
-  editDialogVisible.value = true
-}
-
-// Save property changes
-const saveProperty = () => {
-  emit('update:property', {
-    id: currentPropertyId.value,
-    ...currentProperty.value
-  })
-  editDialogVisible.value = false
+  emit('edit:property', property)
 }
 
 // Emit event to add a child property
