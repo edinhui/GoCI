@@ -6,13 +6,15 @@
       default-expand-all
     >
       <template #default="{ node, data }">
-        <div class="property-node">
+        <div class="property-node" :class="{ 'fixed-field': data.isFixed }">
           <div class="property-info">
             <span class="property-name">{{ data.name }}</span>
             <el-tag size="small" :type="getTypeColor(data.type)">
               {{ data.type }}
             </el-tag>
             <el-tag v-if="data.required" size="small" type="danger">Required</el-tag>
+            <el-tag v-if="data.isFixed" size="small" type="info">固定字段</el-tag>
+            <el-tag v-if="data.readOnly" size="small" type="warning">ReadOnly</el-tag>
           </div>
           <div class="property-actions">
             <el-button-group>
@@ -26,7 +28,13 @@
               >
                 <el-icon><Plus /></el-icon>
               </el-button>
-              <el-button size="small" type="danger" @click.stop="deleteProperty(data)">
+              <el-button 
+                size="small" 
+                type="danger" 
+                @click.stop="deleteProperty(data)"
+                :disabled="data.isFixed"
+                v-if="!data.isFixed"
+              >
                 <el-icon><Delete /></el-icon>
               </el-button>
             </el-button-group>
@@ -118,5 +126,10 @@ const deleteProperty = (property) => {
 
 .property-actions {
   margin-left: 20px;
+}
+
+.fixed-field {
+  background-color: #f0f9ff;
+  border-left: 3px solid #409eff;
 }
 </style>

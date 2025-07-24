@@ -42,23 +42,39 @@
       width="600px"
     >
       <el-form :model="currentProperty" label-width="120px">
-        <el-form-item label="Name" required>
-          <el-input v-model="currentProperty.name" placeholder="Enter property name" />
+        <el-form-item label="属性名称" required>
+          <el-input v-model="currentProperty.name" placeholder="输入属性名称" :disabled="currentProperty.isFixed" />
         </el-form-item>
-        <el-form-item label="Type" required>
-          <el-select v-model="currentProperty.type" placeholder="Select Type">
-            <el-option label="String" value="string" />
-            <el-option label="Number" value="number" />
-            <el-option label="Boolean" value="boolean" />
-            <el-option label="Object" value="object" />
-            <el-option label="Array" value="array" />
+        
+        <el-form-item label="属性类型" required>
+          <el-select v-model="currentProperty.type" placeholder="选择属性类型" style="width: 100%" :disabled="currentProperty.isFixed">
+            <el-option label="字符串" value="string" />
+            <el-option label="数字" value="number" />
+            <el-option label="布尔值" value="boolean" />
+            <el-option label="对象" value="object" />
+            <el-option label="数组" value="array" />
           </el-select>
         </el-form-item>
-        <el-form-item label="Required">
-          <el-switch v-model="currentProperty.required" />
+        
+        <el-form-item label="是否必填">
+          <el-switch v-model="currentProperty.required" :disabled="currentProperty.isFixed" />
         </el-form-item>
-        <el-form-item label="Description">
-          <el-input v-model="currentProperty.description" type="textarea" :rows="2" placeholder="Property description" />
+        
+        <el-form-item label="描述">
+          <el-input 
+            v-model="currentProperty.description" 
+            type="textarea" 
+            placeholder="输入属性描述"
+            :disabled="currentProperty.isFixed"
+          />
+        </el-form-item>
+        
+        <el-form-item v-if="currentProperty.isFixed" label="固定字段值" required>
+          <el-input 
+            v-model="currentProperty.value" 
+            placeholder="输入固定字段值"
+          />
+          <span class="validation-hint">此值将作为默认值且在配置中不可修改</span>
         </el-form-item>
         
         <!-- Validation rules based on type -->
@@ -157,16 +173,72 @@
         </span>
       </template>
     </el-dialog>
+    
+    <!-- 固定字段值设置对话框 -->
+    <el-dialog
+      v-model="fixedFieldDialogVisible"
+      title="设置固定字段值"
+      width="600px"
+    >
+      <p>请为以下固定字段设置值，这些值在后续配置中将无法修改。</p>
+      
+      <el-form label-width="120px">
+        <el-form-item 
+          v-for="field in currentFixedFields" 
+          :key="field.id" 
+          :label="field.name" 
+          :required="field.required"
+        >
+          <el-input 
+            v-model="field.value" 
+            :placeholder="`请输入${field.name}值`" 
+          />
+          <span class="validation-hint">{{ field.description }}</span>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="cancelFixedFieldsDialog">取消</el-button>
+          <el-button type="primary" @click="saveFixedFieldsDialog">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import SchemaPropertyTree from '../components/SchemaPropertyTree.vue'
 
+// 固定字段配置
+const FIXED_FIELDS = {
+  // 根级固定字段
+  root: [
+    { name: 'title', type: 'string', required: true, description: '配置标题', readOnly: true, isFixed: true },
+    { name: 'description', type: 'string', required: false, description: '配置描述', readOnly: true, isFixed: true }
+  ],
+  // 对象级固定字段
+  object: [
+    { name: 'title', type: 'string', required: true, description: '项目标题', readOnly: true, isFixed: true },
+    { name: 'description', type: 'string', required: false, description: '配置描述', readOnly: true, isFixed: true }
+  ]
+}
+
 // Schema properties data structure
 const schemaProperties = ref([])
+
+// 初始化Schema，添加根级固定字段
+const initSchema = () => {
+  // 打开根级固定字段设置对话框
+  openFixedFieldsDialog(null, FIXED_FIELDS.root)
+}
+
+// 组件挂载时初始化Schema
+onMounted(() => {
+  initSchema()
+})
 
 // Property dialog state
 const propertyDialogVisible = ref(false)
@@ -192,10 +264,17 @@ const currentProperty = ref({
   uniqueItems: false,
   // Enum values
   enum: [],
-  children: []
+  children: [],
+  // 固定字段值
+  value: undefined
 })
 const dialogMode = ref('add')
 const parentProperty = ref(null)
+
+// 固定字段值设置对话框状态
+const fixedFieldDialogVisible = ref(false)
+const currentFixedFields = ref([])
+const currentObjectProperty = ref(null)
 
 // Enum input handling
 const enumInputVisible = ref(false)
@@ -325,7 +404,11 @@ const extractValidationFields = (property) => {
     name: property.name,
     type: property.type,
     required: property.required,
-    children: property.children || []
+    children: property.children || [],
+    // 保留固定字段标记、只读属性和值
+    isFixed: property.isFixed || false,
+    readOnly: property.readOnly || false,
+    value: property.value
   }
   
   // Add description if available
@@ -374,17 +457,10 @@ const saveProperty = () => {
   if (dialogMode.value === 'add') {
     if (parentProperty.value) {
       // Add as child property
-      if (parentProperty.value.type !== 'object') {
-        parentProperty.value.type = 'object'
-      }
-      if (!parentProperty.value.children) {
-        parentProperty.value.children = []
-      }
-      parentProperty.value.children.push(propertyData)
-      updateProperty(parentProperty.value)
+      addChildProperty(propertyData, parentProperty.value)
     } else {
       // Add as root property
-      schemaProperties.value.push(propertyData)
+      addProperty(propertyData)
     }
   } else {
     // Edit existing property
@@ -393,6 +469,41 @@ const saveProperty = () => {
   
   propertyDialogVisible.value = false
   ElMessage.success('Property saved successfully')
+}
+
+// Add a property to the schema
+const addProperty = (property) => {
+  schemaProperties.value.push(property)
+  
+  // 如果是对象类型，自动添加固定子字段
+  if (property.type === 'object' && !property.isFixed) {
+    addFixedFieldsToObject(property)
+  }
+}
+
+// 为对象类型属性添加固定子字段
+const addFixedFieldsToObject = (objectProperty) => {
+  if (!objectProperty.children) {
+    objectProperty.children = []
+  }
+  
+  // 打开对象级固定字段设置对话框
+  openFixedFieldsDialog(objectProperty, FIXED_FIELDS.object)
+}
+
+// Add a child property to a parent property
+const addChildProperty = (childProperty, parentProperty) => {
+  if (!parentProperty.children) {
+    parentProperty.children = []
+  }
+  parentProperty.children.push(childProperty)
+  
+  // 如果添加的是对象类型，自动添加固定子字段
+  if (childProperty.type === 'object' && !childProperty.isFixed) {
+    addFixedFieldsToObject(childProperty)
+  }
+  
+  updateProperty(parentProperty)
 }
 
 // Update a property in the schema
@@ -419,6 +530,11 @@ const updateProperty = (property) => {
 const deleteProperty = (id) => {
   const findAndDelete = (properties, id) => {
     for (let i = 0; i < properties.length; i++) {
+      // 不允许删除固定字段
+      if (properties[i].isFixed) {
+        continue
+      }
+      
       if (properties[i].id === id) {
         properties.splice(i, 1)
         return true
@@ -433,6 +549,78 @@ const deleteProperty = (id) => {
   }
 
   findAndDelete(schemaProperties.value, id)
+}
+
+// 打开固定字段设置对话框
+const openFixedFieldsDialog = (objectProperty, fixedFieldsTemplate) => {
+  currentObjectProperty.value = objectProperty
+  
+  // 创建固定字段列表副本
+  currentFixedFields.value = fixedFieldsTemplate.map(field => ({
+    ...field,
+    id: generateId(),
+    value: ''
+  }))
+  
+  fixedFieldDialogVisible.value = true
+}
+
+// 保存固定字段设置
+const saveFixedFieldsDialog = () => {
+  // 验证必填字段
+  const missingRequired = currentFixedFields.value.find(
+    field => field.required && (!field.value || !field.value.trim())
+  )
+  
+  if (missingRequired) {
+    ElMessage.error(`${missingRequired.name} 是必填字段`)
+    return
+  }
+  
+  if (currentObjectProperty.value === null) {
+    // 根级固定字段
+    currentFixedFields.value.forEach(field => {
+      schemaProperties.value.push(field)
+    })
+  } else {
+    // 对象级固定字段
+    if (!currentObjectProperty.value.children) {
+      currentObjectProperty.value.children = []
+    }
+    
+    currentFixedFields.value.forEach(field => {
+      currentObjectProperty.value.children.push(field)
+    })
+    
+    // 更新对象属性
+    updateProperty(currentObjectProperty.value)
+  }
+  
+  fixedFieldDialogVisible.value = false
+  ElMessage.success('固定字段设置成功')
+}
+
+// 取消固定字段设置
+const cancelFixedFieldsDialog = () => {
+  // 如果是初始化时取消，使用默认值
+  if (currentObjectProperty.value === null) {
+    // 添加根级固定字段，使用默认值
+    FIXED_FIELDS.root.forEach(field => {
+      const fixedField = { ...field, id: generateId() }
+      schemaProperties.value.push(fixedField)
+    })
+  } else {
+    // 添加对象级固定字段，使用默认值
+    FIXED_FIELDS.object.forEach(field => {
+      const fixedField = { ...field, id: generateId() }
+      currentObjectProperty.value.children.push(fixedField)
+    })
+    
+    // 更新对象属性
+    updateProperty(currentObjectProperty.value)
+  }
+  
+  fixedFieldDialogVisible.value = false
 }
 
 // Generate a preview of the JSON Schema
@@ -460,6 +648,14 @@ const schemaPreview = computed(() => {
             propSchema[key] = validationFields[key]
           }
         })
+        
+        // 如果有值，添加默认值
+        // 注意：对于固定字段，在JSON Schema中使用default来设置默认值
+        // 这样在配置编辑器中就会默认显示这个值
+        // 结合readOnly属性，实现了值不可修改的效果
+        if (prop.value !== undefined && prop.value !== null && prop.value !== '') {
+          propSchema.default = prop.value
+        }
         
         // Handle object type with children
         if (prop.type === 'object' && prop.children && prop.children.length > 0) {
