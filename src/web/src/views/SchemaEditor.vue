@@ -1,12 +1,19 @@
 <template>
   <div class="schema-editor">
-    <h2>JSON Schema Editor</h2>
+    <div class="editor-header">
+      <h2>{{ $t('schemaEditor.title') }}</h2>
+      <div class="header-actions">
+        <el-button @click="switchLanguage" size="small" type="info">
+          {{ $t('language.switch') }}
+        </el-button>
+      </div>
+    </div>
     <el-card class="editor-card">
       <template #header>
         <div class="card-header">
-          <h3>Schema Properties</h3>
+          <h3>{{ $t('schemaEditor.properties') }}</h3>
           <el-button type="primary" @click="openAddPropertyDialog">
-            Add Property
+            {{ $t('schemaEditor.addProperty') }}
           </el-button>
         </div>
       </template>
@@ -24,9 +31,9 @@
     <el-card class="preview-card">
       <template #header>
         <div class="card-header">
-          <h3>Schema Preview</h3>
+          <h3>{{ $t('schemaEditor.preview') }}</h3>
           <el-button type="success" @click="exportSchema">
-            Export Schema
+            {{ $t('schemaEditor.exportSchema') }}
           </el-button>
         </div>
       </template>
@@ -38,108 +45,108 @@
     <!-- Property Add/Edit Dialog -->
     <el-dialog
       v-model="propertyDialogVisible"
-      :title="dialogMode === 'add' ? 'Add Property' : 'Edit Property'"
+      :title="dialogMode === 'add' ? $t('propertyDialog.add') : $t('propertyDialog.edit')"
       width="600px"
     >
       <el-form :model="currentProperty" label-width="120px">
-        <el-form-item label="属性名称" required>
-          <el-input v-model="currentProperty.name" placeholder="输入属性名称" :disabled="currentProperty.isFixed" />
+        <el-form-item :label="$t('propertyDialog.name')" required>
+          <el-input v-model="currentProperty.name" :placeholder="`${$t('propertyDialog.name')}`" :disabled="currentProperty.isFixed" />
         </el-form-item>
         
-        <el-form-item label="属性类型" required>
-          <el-select v-model="currentProperty.type" placeholder="选择属性类型" style="width: 100%" :disabled="currentProperty.isFixed">
-            <el-option label="字符串" value="string" />
-            <el-option label="数字" value="number" />
-            <el-option label="布尔值" value="boolean" />
-            <el-option label="对象" value="object" />
-            <el-option label="数组" value="array" />
+        <el-form-item :label="$t('propertyDialog.type')" required>
+          <el-select v-model="currentProperty.type" :placeholder="`${$t('propertyDialog.type')}`" style="width: 100%" :disabled="currentProperty.isFixed">
+            <el-option :label="$t('propertyTypes.string')" value="string" />
+            <el-option :label="$t('propertyTypes.number')" value="number" />
+            <el-option :label="$t('propertyTypes.boolean')" value="boolean" />
+            <el-option :label="$t('propertyTypes.object')" value="object" />
+            <el-option :label="$t('propertyTypes.array')" value="array" />
           </el-select>
         </el-form-item>
         
-        <el-form-item label="是否必填">
+        <el-form-item :label="$t('propertyDialog.required')">
           <el-switch v-model="currentProperty.required" :disabled="currentProperty.isFixed" />
         </el-form-item>
         
-        <el-form-item label="描述">
+        <el-form-item :label="$t('propertyDialog.description')">
           <el-input 
             v-model="currentProperty.description" 
             type="textarea" 
-            placeholder="输入属性描述"
+            :placeholder="`${$t('propertyDialog.description')}`"
             :disabled="currentProperty.isFixed"
           />
         </el-form-item>
         
-        <el-form-item v-if="currentProperty.isFixed" label="固定字段值" required>
+        <el-form-item v-if="currentProperty.isFixed" :label="$t('propertyDialog.fixedFieldValue')" required>
           <el-input 
             v-model="currentProperty.value" 
-            placeholder="输入固定字段值"
+            :placeholder="`${$t('propertyDialog.fixedFieldValue')}`"
           />
-          <span class="validation-hint">此值将作为默认值且在配置中不可修改</span>
+          <span class="validation-hint">{{ $t('propertyDialog.fixedFieldHint') }}</span>
         </el-form-item>
         
         <!-- Validation rules based on type -->
-        <el-divider content-position="left">Validation Rules</el-divider>
+        <el-divider content-position="left">{{ $t('schemaEditor.validationRules') }}</el-divider>
         
         <!-- String validation -->
         <template v-if="currentProperty.type === 'string'">
-          <el-form-item label="Min Length">
+          <el-form-item :label="$t('validation.string.minLength')">
             <el-input-number v-model="currentProperty.minLength" :min="0" :step="1" />
           </el-form-item>
-          <el-form-item label="Max Length">
+          <el-form-item :label="$t('validation.string.maxLength')">
             <el-input-number v-model="currentProperty.maxLength" :min="0" :step="1" />
           </el-form-item>
-          <el-form-item label="Pattern">
-            <el-input v-model="currentProperty.pattern" placeholder="Regular expression pattern" />
-            <span class="validation-hint">Example: ^[a-zA-Z0-9]+$</span>
+          <el-form-item :label="$t('validation.string.pattern')">
+            <el-input v-model="currentProperty.pattern" :placeholder="$t('validation.string.pattern')" />
+            <span class="validation-hint">{{ $t('validation.string.patternHint') }}</span>
           </el-form-item>
-          <el-form-item label="Format">
-            <el-select v-model="currentProperty.format" placeholder="Select Format" clearable>
-              <el-option label="Email" value="email" />
-              <el-option label="URI" value="uri" />
-              <el-option label="Date" value="date" />
-              <el-option label="Date-Time" value="date-time" />
-              <el-option label="Hostname" value="hostname" />
-              <el-option label="IPv4" value="ipv4" />
-              <el-option label="IPv6" value="ipv6" />
+          <el-form-item :label="$t('validation.string.format')">
+            <el-select v-model="currentProperty.format" :placeholder="$t('validation.string.format')" clearable>
+              <el-option :label="$t('validation.formats.email')" value="email" />
+              <el-option :label="$t('validation.formats.uri')" value="uri" />
+              <el-option :label="$t('validation.formats.date')" value="date" />
+              <el-option :label="$t('validation.formats.dateTime')" value="date-time" />
+              <el-option :label="$t('validation.formats.hostname')" value="hostname" />
+              <el-option :label="$t('validation.formats.ipv4')" value="ipv4" />
+              <el-option :label="$t('validation.formats.ipv6')" value="ipv6" />
             </el-select>
           </el-form-item>
         </template>
         
         <!-- Number validation -->
         <template v-if="currentProperty.type === 'number'">
-          <el-form-item label="Minimum">
+          <el-form-item :label="$t('validation.number.minimum')">
             <el-input-number v-model="currentProperty.minimum" :step="1" />
           </el-form-item>
-          <el-form-item label="Maximum">
+          <el-form-item :label="$t('validation.number.maximum')">
             <el-input-number v-model="currentProperty.maximum" :step="1" />
           </el-form-item>
-          <el-form-item label="Multiple Of">
+          <el-form-item :label="$t('validation.number.multipleOf')">
             <el-input-number v-model="currentProperty.multipleOf" :min="0" :step="1" />
           </el-form-item>
-          <el-form-item label="Exclusive Min">
+          <el-form-item :label="$t('validation.number.exclusiveMinimum')">
             <el-switch v-model="currentProperty.exclusiveMinimum" />
           </el-form-item>
-          <el-form-item label="Exclusive Max">
+          <el-form-item :label="$t('validation.number.exclusiveMaximum')">
             <el-switch v-model="currentProperty.exclusiveMaximum" />
           </el-form-item>
         </template>
         
         <!-- Array validation -->
         <template v-if="currentProperty.type === 'array'">
-          <el-form-item label="Min Items">
+          <el-form-item :label="$t('validation.array.minItems')">
             <el-input-number v-model="currentProperty.minItems" :min="0" :step="1" />
           </el-form-item>
-          <el-form-item label="Max Items">
+          <el-form-item :label="$t('validation.array.maxItems')">
             <el-input-number v-model="currentProperty.maxItems" :min="0" :step="1" />
           </el-form-item>
-          <el-form-item label="Unique Items">
+          <el-form-item :label="$t('validation.array.uniqueItems')">
             <el-switch v-model="currentProperty.uniqueItems" />
           </el-form-item>
         </template>
         
         <!-- Enum values for all types except object -->
         <template v-if="currentProperty.type !== 'object'">
-          <el-form-item label="Enum Values">
+          <el-form-item :label="$t('validation.enum.title')">
             <div class="enum-input-container">
               <el-tag
                 v-for="(enumValue, index) in currentProperty.enum || []"
@@ -160,7 +167,7 @@
                 @blur="addEnum"
               />
               <el-button v-else class="button-new-enum" size="small" @click="showEnumInput">
-                + Add Value
+                {{ $t('validation.enum.addValue') }}
               </el-button>
             </div>
           </el-form-item>
@@ -168,8 +175,8 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="propertyDialogVisible = false">Cancel</el-button>
-          <el-button type="primary" @click="saveProperty">Save</el-button>
+          <el-button @click="propertyDialogVisible = false">{{ $t('propertyDialog.cancel') }}</el-button>
+          <el-button type="primary" @click="saveProperty">{{ $t('propertyDialog.save') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -199,8 +206,8 @@
       
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="cancelFixedFieldsDialog">取消</el-button>
-          <el-button type="primary" @click="saveFixedFieldsDialog">保存</el-button>
+          <el-button @click="cancelFixedFieldsDialog">{{ $t('propertyDialog.cancel') }}</el-button>
+          <el-button type="primary" @click="saveFixedFieldsDialog">{{ $t('propertyDialog.save') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -210,8 +217,26 @@
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import SchemaPropertyTree from '../components/SchemaPropertyTree.vue'
 import fixedFieldsConfig from '../config/fixed-fields.json'
+
+// i18n 实例
+const { t, locale } = useI18n()
+
+// 切换语言
+const switchLanguage = () => {
+  // 切换语言
+  locale.value = locale.value === 'zh' ? 'en' : 'zh'
+  // 保存语言设置到localStorage
+  localStorage.setItem('language', locale.value)
+  
+  // 提示用户语言已切换
+  ElMessage({
+    message: locale.value === 'zh' ? '已切换到中文' : 'Switched to English',
+    type: 'success'
+  })
+}
 
 // 固定字段配置 - 从JSON文件加载
 const FIXED_FIELDS = fixedFieldsConfig
@@ -713,16 +738,42 @@ const exportSchema = () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding: 10px;
 }
 
-.editor-card, .preview-card {
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+  padding: 10px 0;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.editor-header h2 {
+  margin: 0;
+  color: #409EFF;
+  font-size: 24px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.editor-card {
+  margin-bottom: 20px;
+}
+
+.preview-card {
+  margin-bottom: 20px;
 }
 
 .tree-container {
