@@ -1,0 +1,38 @@
+{
+  "root": [
+    { 
+      "name": "title", 
+      "type": "string", 
+      "required": true, 
+      "description": "配置标题", 
+      "readOnly": true, 
+      "isFixed": true 
+    },
+    { 
+      "name": "description", 
+      "type": "string", 
+      "required": false, 
+      "description": "配置描述", 
+      "readOnly": true, 
+      "isFixed": true 
+    }
+  ],
+  "object": [
+    { 
+      "name": "title", 
+      "type": "string", 
+      "required": true, 
+      "description": "项目标题", 
+      "readOnly": true, 
+      "isFixed": true 
+    },
+    { 
+      "name": "description", 
+      "type": "string", 
+      "required": false, 
+      "description": "配置描述", 
+      "readOnly": true, 
+      "isFixed": true 
+    }
+  ]
+}

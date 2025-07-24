@@ -211,20 +211,10 @@
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import SchemaPropertyTree from '../components/SchemaPropertyTree.vue'
+import fixedFieldsConfig from '../config/fixed-fields.json'
 
-// 固定字段配置
-const FIXED_FIELDS = {
-  // 根级固定字段
-  root: [
-    { name: 'title', type: 'string', required: true, description: '配置标题', readOnly: true, isFixed: true },
-    { name: 'description', type: 'string', required: false, description: '配置描述', readOnly: true, isFixed: true }
-  ],
-  // 对象级固定字段
-  object: [
-    { name: 'title', type: 'string', required: true, description: '项目标题', readOnly: true, isFixed: true },
-    { name: 'description', type: 'string', required: false, description: '配置描述', readOnly: true, isFixed: true }
-  ]
-}
+// 固定字段配置 - 从JSON文件加载
+const FIXED_FIELDS = fixedFieldsConfig
 
 // Schema properties data structure
 const schemaProperties = ref([])
