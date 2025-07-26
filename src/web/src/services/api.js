@@ -13,11 +13,12 @@ const api = axios.create({
 export const schemaService = {
   // 保存Schema
   saveSchema(id, name, description, schemaData) {
-    return api.post(`/schemas/${id}`, schemaData, {
-      headers: {
-        'X-Schema-Name': name,
-        'X-Schema-Description': description
-      }
+    return api.post(`/schemas/${id}`, {
+      metadata: {
+        name: name,
+        description: description
+      },
+      schema: schemaData
     });
   },
 

@@ -1,10 +1,17 @@
 export default {
+  sidebar: {
+    schemaManagement: 'Schema 管理',
+    configEditor: '配置编辑器'
+  },
   schemaEditor: {
     title: 'JSON Schema 编辑器',
+    editTitle: '编辑 Schema: {name}',
     properties: 'Schema 属性',
     preview: 'Schema 预览',
     addProperty: '添加属性',
     exportSchema: '导出 Schema',
+    save: '保存 Schema',
+    backToList: '返回列表',
     validationRules: '验证规则'
   },
   propertyDialog: {
@@ -67,5 +74,35 @@ export default {
   language: {
     switch: 'Switch to English',
     current: '中文'
+  },
+  schemaViewer: {
+    title: 'Schema 查看器',
+    schemaDetails: 'Schema 详情',
+    backToList: '返回列表',
+    edit: '编辑',
+    id: 'ID',
+    name: '名称',
+    description: '描述',
+    createdAt: '创建时间',
+    updatedAt: '更新时间',
+    schemaContent: 'Schema 内容',
+    configExample: '配置示例',
+    loadError: '加载 Schema 失败'
+  },
+  schemaList: {
+    title: 'Schema 列表',
+    search: '搜索 Schema',
+    createNew: '创建新 Schema',
+    id: 'ID',
+    name: '名称',
+    description: '描述',
+    updatedAt: '更新时间',
+    actions: '操作',
+    view: '查看',
+    edit: '编辑',
+    delete: '删除',
+    deleteConfirm: '确认删除该 Schema？',
+    noSchemas: '暂无 Schema',
+    loadError: '加载 Schema 列表失败'
   }
 }

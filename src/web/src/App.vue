@@ -9,14 +9,14 @@
         </el-header>
         <el-container class="main-container">
           <el-aside width="200px">
-            <el-menu router default-active="schema-editor">
-              <el-menu-item index="schema-editor">
+            <el-menu router :default-active="$route.path">
+              <el-menu-item index="/schemas">
                 <el-icon><Document /></el-icon>
-                <span>Schema Editor</span>
+                <span>{{ $t('sidebar.schemaManagement') }}</span>
               </el-menu-item>
-              <el-menu-item index="config-editor" disabled>
+              <el-menu-item index="/config-editor" disabled>
                 <el-icon><Edit /></el-icon>
-                <span>Config Editor</span>
+                <span>{{ $t('sidebar.configEditor') }}</span>
               </el-menu-item>
             </el-menu>
           </el-aside>

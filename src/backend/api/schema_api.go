@@ -1,7 +1,7 @@
 package api
 
 import (
-	"io"
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,19 +29,33 @@ func (h *SchemaHandler) SaveSchema(c *gin.Context) {
 		return
 	}
 
-	// 从请求体获取Schema数据
-	schemaData, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+	// 解析请求体
+	var requestBody struct {
+		Metadata struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+		} `json:"metadata"`
+		Schema json.RawMessage `json:"schema"`
+	}
+
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse request body: " + err.Error()})
 		return
 	}
 
-	// 从请求头获取Schema名称和描述
-	name := c.GetHeader("X-Schema-Name")
+	// 获取元数据
+	name := requestBody.Metadata.Name
 	if name == "" {
 		name = id // 如果没有提供名称，使用ID作为名称
 	}
-	description := c.GetHeader("X-Schema-Description")
+	description := requestBody.Metadata.Description
+
+	// 将schema转换为字节数组
+	schemaData, err := json.Marshal(requestBody.Schema)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to process schema data: " + err.Error()})
+		return
+	}
 
 	// 保存Schema
 	if err := h.storage.SaveSchema(id, name, description, schemaData); err != nil {
@@ -49,7 +63,15 @@ func (h *SchemaHandler) SaveSchema(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Schema saved successfully", "id": id})
+	// 构建统一格式的响应
+	c.JSON(http.StatusOK, gin.H{
+		"metadata": gin.H{
+			"id":          id,
+			"name":        name,
+			"description": description,
+		},
+		"message": "Schema saved successfully",
+	})
 }
 
 // GetSchema 处理获取Schema的请求
@@ -68,15 +90,27 @@ func (h *SchemaHandler) GetSchema(c *gin.Context) {
 		return
 	}
 
-	// 设置响应头
-	c.Header("Content-Type", "application/json")
-	c.Header("X-Schema-Name", metadata.Name)
-	c.Header("X-Schema-Description", metadata.Description)
-	c.Header("X-Schema-Created-At", metadata.CreatedAt)
-	c.Header("X-Schema-Updated-At", metadata.UpdatedAt)
+	// 解析schema数据为JSON
+	var schemaJSON map[string]interface{}
+	if err := json.Unmarshal(schemaData, &schemaJSON); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse schema data"})
+		return
+	}
 
-	// 返回Schema数据
-	c.Data(http.StatusOK, "application/json", schemaData)
+	// 构建响应对象
+	response := gin.H{
+		"metadata": gin.H{
+			"id":          id,
+			"name":        metadata.Name,
+			"description": metadata.Description,
+			"createdAt":   metadata.CreatedAt,
+			"updatedAt":   metadata.UpdatedAt,
+		},
+		"schema": schemaJSON,
+	}
+
+	// 返回统一格式的JSON响应
+	c.JSON(http.StatusOK, response)
 }
 
 // ListSchemas 处理列出所有Schema的请求
@@ -88,7 +122,8 @@ func (h *SchemaHandler) ListSchemas(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, schemas)
+	// 构建统一格式的响应
+	c.JSON(http.StatusOK, gin.H{"schemas": schemas})
 }
 
 // DeleteSchema 处理删除Schema的请求

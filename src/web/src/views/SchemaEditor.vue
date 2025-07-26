@@ -1,8 +1,14 @@
 <template>
   <div class="schema-editor">
     <div class="editor-header">
-      <h2>{{ $t('schemaEditor.title') }}</h2>
+      <h2>{{ isEditMode ? $t('schemaEditor.editTitle', { name: schemaMetadata.name }) : $t('schemaEditor.title') }}</h2>
       <div class="header-actions">
+        <el-button @click="backToList" size="small">
+          {{ $t('schemaEditor.backToList') }}
+        </el-button>
+        <el-button @click="openSaveMetadataDialog" size="small" type="primary">
+          {{ $t('schemaEditor.save') }}
+        </el-button>
         <el-button @click="switchLanguage" size="small" type="info">
           {{ $t('language.switch') }}
         </el-button>
@@ -211,18 +217,67 @@
         </span>
       </template>
     </el-dialog>
+    <!-- 保存元数据对话框 -->
+    <el-dialog
+      v-model="saveMetadataDialogVisible"
+      :title="$t('schemaEditor.saveMetadataTitle')"
+      width="500px"
+    >
+      <el-form :model="tempSchemaMetadata" label-width="120px">
+        <el-form-item :label="$t('schemaEditor.schemaName')" required>
+          <el-input v-model="tempSchemaMetadata.name" />
+        </el-form-item>
+        <el-form-item :label="$t('schemaEditor.schemaDescription')">
+          <el-input 
+            v-model="tempSchemaMetadata.description" 
+            type="textarea" 
+            :rows="3" 
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="saveMetadataDialogVisible = false">
+            {{ $t('common.cancel') }}
+          </el-button>
+          <el-button type="primary" @click="saveSchema">
+            {{ $t('common.confirm') }}
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import SchemaPropertyTree from '../components/SchemaPropertyTree.vue'
 import fixedFieldsConfig from '../config/fixed-fields.json'
 
+// 导入API服务
+import { schemaService } from '../services/api'
+
 // i18n 实例
 const { t, locale } = useI18n()
+const route = useRoute()
+const router = useRouter()
+
+// 编辑模式相关
+const isEditMode = ref(false)
+const schemaId = ref('')
+const schemaMetadata = ref({
+  id: '',
+  name: '',
+  description: ''
+})
+
+// 返回列表页
+const backToList = () => {
+  router.push({ name: 'SchemaList' })
+}
 
 // 切换语言
 const switchLanguage = () => {
@@ -250,9 +305,51 @@ const initSchema = () => {
   openFixedFieldsDialog(null, FIXED_FIELDS.root)
 }
 
+// 加载现有Schema
+const loadExistingSchema = async (id) => {
+  try {
+    const response = await schemaService.getSchema(id)
+    if (response.data && response.data.schema) {
+      // 设置元数据
+      schemaMetadata.value = response.data.metadata || {}
+      schemaId.value = id
+      isEditMode.value = true
+      
+      // 解析Schema数据
+      const schema = response.data.schema
+      
+      // 清除当前属性
+      schemaProperties.value = []
+      
+      // 将加载的Schema转换为属性树
+      if (schema.properties) {
+        Object.keys(schema.properties).forEach(key => {
+          const property = {
+            id: generateId(),
+            name: key,
+            ...schema.properties[key]
+          }
+          schemaProperties.value.push(property)
+        })
+      }
+      
+      ElMessage.success(t('schemaEditor.loadSuccess'))
+    }
+  } catch (error) {
+    console.error('Error loading schema:', error)
+    ElMessage.error(t('schemaEditor.loadError'))
+  }
+}
+
 // 组件挂载时初始化Schema
 onMounted(() => {
-  initSchema()
+  // 检查是否有ID参数，如果有则加载现有Schema
+  const id = route.params.id
+  if (id) {
+    loadExistingSchema(id)
+  } else {
+    initSchema()
+  }
 })
 
 // Property dialog state
@@ -638,67 +735,68 @@ const cancelFixedFieldsDialog = () => {
   fixedFieldDialogVisible.value = false
 }
 
-// Generate a preview of the JSON Schema
-const schemaPreview = computed(() => {
-  const generateSchema = (properties) => {
-    const schema = {
-      $schema: "http://json-schema.org/draft-07/schema#",
-      type: "object",
-      properties: {},
-      required: []
-    }
-
-    const processProperties = (properties, schemaObj) => {
-      for (const prop of properties) {
-        // Create property schema with type and validation rules
-        const propSchema = { type: prop.type }
-        
-        // Apply validation rules using the same helper function
-        const validationFields = extractValidationFields(prop)
-        
-        // Copy all validation fields except id, name, type, required, and children
-        // which are handled separately in the schema generation
-        Object.keys(validationFields).forEach(key => {
-          if (!['id', 'name', 'type', 'required', 'children'].includes(key)) {
-            propSchema[key] = validationFields[key]
-          }
-        })
-        
-        // 如果有值，添加默认值
-        // 注意：对于固定字段，在JSON Schema中使用default来设置默认值
-        // 这样在配置编辑器中就会默认显示这个值
-        // 结合readOnly属性，实现了值不可修改的效果
-        if (prop.value !== undefined && prop.value !== null && prop.value !== '') {
-          propSchema.default = prop.value
-        }
-        
-        // Handle object type with children
-        if (prop.type === 'object' && prop.children && prop.children.length > 0) {
-          propSchema.properties = {}
-          propSchema.required = []
-          processProperties(prop.children, propSchema)
-          
-          // If no required properties were found, remove the required array
-          if (propSchema.required.length === 0) {
-            delete propSchema.required
-          }
-          
-          schemaObj.properties[prop.name] = propSchema
-        } else {
-          schemaObj.properties[prop.name] = propSchema
-        }
-        
-        // Add to parent's required array if this property is required
-        if (prop.required) {
-          schemaObj.required.push(prop.name)
-        }
-      }
-    }
-
-    processProperties(properties, schema)
-    return schema
+// 生成JSON Schema的函数
+const generateSchema = (properties) => {
+  const schema = {
+    $schema: "http://json-schema.org/draft-07/schema#",
+    type: "object",
+    properties: {},
+    required: []
   }
 
+  const processProperties = (properties, schemaObj) => {
+    for (const prop of properties) {
+      // Create property schema with type and validation rules
+      const propSchema = { type: prop.type }
+      
+      // Apply validation rules using the same helper function
+      const validationFields = extractValidationFields(prop)
+      
+      // Copy all validation fields except id, name, type, required, and children
+      // which are handled separately in the schema generation
+      Object.keys(validationFields).forEach(key => {
+        if (!['id', 'name', 'type', 'required', 'children'].includes(key)) {
+          propSchema[key] = validationFields[key]
+        }
+      })
+      
+      // 如果有值，添加默认值
+      // 注意：对于固定字段，在JSON Schema中使用default来设置默认值
+      // 这样在配置编辑器中就会默认显示这个值
+      // 结合readOnly属性，实现了值不可修改的效果
+      if (prop.value !== undefined && prop.value !== null && prop.value !== '') {
+        propSchema.default = prop.value
+      }
+      
+      // Handle object type with children
+      if (prop.type === 'object' && prop.children && prop.children.length > 0) {
+        propSchema.properties = {}
+        propSchema.required = []
+        processProperties(prop.children, propSchema)
+        
+        // If no required properties were found, remove the required array
+        if (propSchema.required.length === 0) {
+          delete propSchema.required
+        }
+        
+        schemaObj.properties[prop.name] = propSchema
+      } else {
+        schemaObj.properties[prop.name] = propSchema
+      }
+      
+      // Add to parent's required array if this property is required
+      if (prop.required) {
+        schemaObj.required.push(prop.name)
+      }
+    }
+  }
+
+  processProperties(properties, schema)
+  return schema
+}
+
+// Generate a preview of the JSON Schema
+const schemaPreview = computed(() => {
   try {
     const schema = generateSchema(schemaProperties.value)
     return JSON.stringify(schema, null, 2)
@@ -708,8 +806,80 @@ const schemaPreview = computed(() => {
   }
 })
 
-// 导入API服务
-import { schemaService } from '../services/api'
+// 保存元数据对话框相关状态
+const saveMetadataDialogVisible = ref(false)
+const tempSchemaMetadata = ref({
+  name: '',
+  description: ''
+})
+const tempSchema = ref(null)
+const tempSchemaId = ref('')
+
+// 打开保存元数据对话框
+const openSaveMetadataDialog = () => {
+  // 生成Schema对象
+  try {
+    const schema = generateSchema(schemaProperties.value)
+    tempSchema.value = schema
+    
+    // 如果是编辑模式，使用现有ID，否则生成新ID
+    tempSchemaId.value = isEditMode.value ? route.params.id : 'schema-' + Date.now()
+    
+    // 初始化元数据
+    tempSchemaMetadata.value = {
+      name: schemaMetadata.value.name || '',
+      description: schemaMetadata.value.description || ''
+    }
+    
+    // 如果没有名称，使用默认值
+    if (!tempSchemaMetadata.value.name) {
+      // 尝试使用Schema中的title作为默认名称
+      const rootTitle = schemaProperties.value.find(p => p.name === 'title')?.value
+      tempSchemaMetadata.value.name = rootTitle || 'Schema ' + new Date().toLocaleString()
+    }
+    
+    // 显示对话框
+    saveMetadataDialogVisible.value = true
+  } catch (error) {
+    console.error('Error preparing schema for save:', error)
+    ElMessage.error(`${t('schemaEditor.saveError')}: ${error.message || error}`)
+  }
+}
+
+// 保存Schema到后端
+const saveSchema = async () => {
+  try {
+    // 验证元数据
+    if (!tempSchemaMetadata.value.name) {
+      ElMessage.warning(t('schemaEditor.nameRequired'))
+      return
+    }
+    
+    // 更新元数据
+    schemaMetadata.value = { ...tempSchemaMetadata.value }
+    
+    // 保存到后端
+    await schemaService.saveSchema(
+      tempSchemaId.value, 
+      tempSchemaMetadata.value.name, 
+      tempSchemaMetadata.value.description, 
+      tempSchema.value
+    )
+    
+    // 关闭对话框
+    saveMetadataDialogVisible.value = false
+    
+    ElMessage.success(t('schemaEditor.saveSuccess'))
+    
+    // 如果是新建模式，保存后跳转到列表页
+    if (!isEditMode.value) {
+      router.push({ name: 'SchemaList' })
+    }
+  } catch (error) {
+    console.error('Error saving schema:', error)
+    ElMessage.error(`${t('schemaEditor.saveError')}: ${error.message || error}`)
+  }
+}
 
 // Export the schema as a JSON file or save to backend
 const exportSchema = async () => {

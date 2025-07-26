@@ -1,10 +1,17 @@
 export default {
+  sidebar: {
+    schemaManagement: 'Schema Management',
+    configEditor: 'Config Editor'
+  },
   schemaEditor: {
     title: 'JSON Schema Editor',
+    editTitle: 'Edit Schema: {name}',
     properties: 'Schema Properties',
     preview: 'Schema Preview',
     addProperty: 'Add Property',
     exportSchema: 'Export Schema',
+    save: 'Save Schema',
+    backToList: 'Back to List',
     validationRules: 'Validation Rules'
   },
   propertyDialog: {
@@ -67,5 +74,35 @@ export default {
   language: {
     switch: 'Switch to 中文',
     current: 'English'
+  },
+  schemaViewer: {
+    title: 'Schema Viewer',
+    schemaDetails: 'Schema Details',
+    backToList: 'Back to List',
+    edit: 'Edit',
+    id: 'ID',
+    name: 'Name',
+    description: 'Description',
+    createdAt: 'Created At',
+    updatedAt: 'Updated At',
+    schemaContent: 'Schema Content',
+    configExample: 'Config Example',
+    loadError: 'Failed to load schema'
+  },
+  schemaList: {
+    title: 'Schema List',
+    search: 'Search Schema',
+    createNew: 'Create New Schema',
+    id: 'ID',
+    name: 'Name',
+    description: 'Description',
+    updatedAt: 'Updated At',
+    actions: 'Actions',
+    view: 'View',
+    edit: 'Edit',
+    delete: 'Delete',
+    deleteConfirm: 'Confirm delete this Schema?',
+    noSchemas: 'No Schemas',
+    loadError: 'Failed to load schema list'
   }
 }
