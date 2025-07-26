@@ -91,6 +91,7 @@ export default {
   },
   schemaList: {
     title: 'Schema 列表',
+    availableSchemas: '可用 Schema',
     search: '搜索 Schema',
     createNew: '创建新 Schema',
     id: 'ID',

@@ -91,6 +91,7 @@ export default {
   },
   schemaList: {
     title: 'Schema List',
+    availableSchemas: 'Available Schemas',
     search: 'Search Schema',
     createNew: 'Create New Schema',
     id: 'ID',
