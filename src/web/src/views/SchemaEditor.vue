@@ -216,7 +216,7 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import SchemaPropertyTree from '../components/SchemaPropertyTree.vue'
 import fixedFieldsConfig from '../config/fixed-fields.json'
@@ -708,29 +708,92 @@ const schemaPreview = computed(() => {
   }
 })
 
-// Export the schema as a JSON file
-const exportSchema = () => {
+// 导入API服务
+import { schemaService } from '../services/api'
+
+// Export the schema as a JSON file or save to backend
+const exportSchema = async () => {
   try {
-    const schema = JSON.parse(schemaPreview.value)
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(schema, null, 2))
-    const downloadAnchorNode = document.createElement('a')
-    downloadAnchorNode.setAttribute("href", dataStr)
-    downloadAnchorNode.setAttribute("download", "schema.json")
-    document.body.appendChild(downloadAnchorNode)
-    downloadAnchorNode.click()
-    downloadAnchorNode.remove()
-    ElMessage({
-      message: 'Schema exported successfully',
-      type: 'success'
-    })
+    const schema = generateSchema(schemaProperties.value)
+    const jsonStr = JSON.stringify(schema, null, 2)
+    
+    // 创建Blob对象
+    const blob = new Blob([jsonStr], { type: 'application/json' })
+    
+    // 显示导出选项
+    ElMessageBox.confirm(
+      t('schemaEditor.exportOptions'),
+      t('schemaEditor.exportTitle'),
+      {
+        confirmButtonText: t('schemaEditor.saveToBackend'),
+        cancelButtonText: t('schemaEditor.downloadFile'),
+        type: 'info',
+        distinguishCancelAndClose: true,
+        showClose: false
+      }
+    )
+      .then(async () => {
+        // 保存到后端
+        try {
+          // 生成唯一ID
+          const schemaId = 'schema-' + Date.now()
+          const schemaName = 'Schema ' + new Date().toLocaleString()
+          const schemaDescription = 'Created from Schema Editor'
+          
+          await schemaService.saveSchema(schemaId, schemaName, schemaDescription, jsonStr)
+          ElMessage.success(t('schemaEditor.saveSuccess'))
+        } catch (error) {
+          console.error('Error saving schema to backend:', error)
+          ElMessage.error(`${t('schemaEditor.saveError')}: ${error.message || error}`)
+        }
+      })
+      .catch(action => {
+        if (action === 'cancel') {
+          // 下载文件
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = 'schema.json'
+          
+          // 触发下载
+          document.body.appendChild(link)
+          link.click()
+          
+          // 清理
+          URL.revokeObjectURL(url)
+          document.body.removeChild(link)
+          
+          ElMessage.success(t('schemaEditor.exportSuccess'))
+        }
+      })
   } catch (error) {
-    console.error('Error exporting schema:', error)
-    ElMessage({
-      message: 'Error exporting schema',
-      type: 'error'
-    })
+    ElMessage.error(`${t('schemaEditor.exportError')}: ${error.message}`)
   }
 }
+
+// Export the schema as a JSON file
+// const exportSchema = () => {
+//   try {
+//     const schema = JSON.parse(schemaPreview.value)
+//     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(schema, null, 2))
+//     const downloadAnchorNode = document.createElement('a')
+//     downloadAnchorNode.setAttribute("href", dataStr)
+//     downloadAnchorNode.setAttribute("download", "schema.json")
+//     document.body.appendChild(downloadAnchorNode)
+//     downloadAnchorNode.click()
+//     downloadAnchorNode.remove()
+//     ElMessage({
+//       message: 'Schema exported successfully',
+//       type: 'success'
+//     })
+//   } catch (error) {
+//     console.error('Error exporting schema:', error)
+//     ElMessage({
+//       message: 'Error exporting schema',
+//       type: 'error'
+//     })
+//   }
+// }
 </script>
 
 <style scoped>
